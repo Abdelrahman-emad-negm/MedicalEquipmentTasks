@@ -1,0 +1,245 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// ------------------------------
+// LCD Setup
+// ------------------------------
+LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C address 0x27, 16 columns, 2 rows
+
+// ------------------------------
+// Pin Definitions
+// ------------------------------
+const int bloodPumpEnablePin = 9;   // Motor driver pin for blood pump (ENA)
+const int fluidPumpEnablePin = 10;  // Motor driver pin for fluid pump (ENB)
+
+const int flowSensorPin = 2;        // Flow sensor input pin (interrupt)
+const int buzzerPin = 6;            // Buzzer output pin
+
+const int trigPin = 12;             // Ultrasonic sensor trigger pin
+const int echoPin = 13;             // Ultrasonic sensor echo pin
+
+const int gsrPin = A0;              // GSR sensor analog input
+
+// Color Sensor (TCS3200) Pins
+const int S0 = 5;
+const int S1 = 4;
+const int S2 = 7;
+const int S3 = 8;
+const int colorOut = 3;             // Color sensor output frequency pin
+
+// ------------------------------
+// Variables
+// ------------------------------
+volatile int flowPulseCount = 0;    // Pulse count from flow sensor
+float flowRate = 0.0;               // Flow rate in mL/min
+unsigned long oldTime = 0;          // Time tracker for flow calculation
+
+const int bloodPumpSpeed = 200;     // Blood pump speed (PWM value)
+const int fluidPumpSpeed = 200;     // Fluid pump speed (PWM value)
+
+long duration;                      // Ultrasonic sensor duration
+float distance;                     // Measured distance from ultrasonic sensor
+
+const float leakThreshold = 50.0;    // Distance threshold to detect air leak (cm)
+const float gsrStressThreshold = 400.0; // GSR threshold to detect patient stress (mS)
+
+int redFreq = 0, greenFreq = 0, blueFreq = 0; // Color sensor frequency readings
+bool bloodLeakDetected = false;               // Blood leak detection flag
+
+// ------------------------------
+// Setup Function
+// ------------------------------
+void setup() {
+  // Initialize I/O pins
+  pinMode(bloodPumpEnablePin, OUTPUT);
+  pinMode(fluidPumpEnablePin, OUTPUT);
+  pinMode(flowSensorPin, INPUT_PULLUP);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // Color sensor configuration
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  pinMode(colorOut, INPUT);
+
+  // Set color sensor frequency scaling to 100%
+  digitalWrite(S0, HIGH);
+  digitalWrite(S1, LOW);
+
+  // Attach interrupt for flow sensor pulses
+  attachInterrupt(digitalPinToInterrupt(flowSensorPin), countPulse, RISING);
+
+  // Initialize Serial Monitor and LCD
+  Serial.begin(9600);
+  lcd.begin(16, 2);
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Dialysis System");
+
+  delay(2000); // Display welcome message
+  lcd.clear();
+
+  oldTime = millis(); // Initialize time tracker
+}
+
+// ------------------------------
+// Main Loop
+// ------------------------------
+void loop() {
+  // Read color sensor values
+  readColor();
+
+  // Ultrasonic sensor measurement
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = ((duration * 0.034) / 2); // Convert to cm
+
+  // Read GSR sensor value
+  float gsrValue = abs(getGSR());
+  bool patientStressed = (gsrValue < gsrStressThreshold);
+
+  // --------------------------
+  // Handle Blood Leak Detection
+  // --------------------------
+  if (bloodLeakDetected) {
+    digitalWrite(buzzerPin, HIGH);         // Sound buzzer
+    analogWrite(bloodPumpEnablePin, 0);     // Stop blood pump
+    analogWrite(fluidPumpEnablePin, 0);     // Stop fluid pump
+
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("LEAK DETECTED");
+    delay(2000);
+    return; // Skip remaining code
+  }
+
+  // --------------------------
+  // Handle Patient Stress Detection
+  // --------------------------
+  if (patientStressed) {
+    analogWrite(bloodPumpEnablePin, bloodPumpSpeed / 2); // Reduce blood pump speed
+    analogWrite(fluidPumpEnablePin, fluidPumpSpeed / 2); // Reduce fluid pump speed
+    digitalWrite(buzzerPin, HIGH); // Alert buzzer
+  } else {
+    analogWrite(bloodPumpEnablePin, bloodPumpSpeed); // Normal operation
+    analogWrite(fluidPumpEnablePin, fluidPumpSpeed);
+  }
+
+  // --------------------------
+  // Update Display Every Second
+  // --------------------------
+  if (millis() - oldTime > 1000) {
+    detachInterrupt(digitalPinToInterrupt(flowSensorPin)); // Safely read flow count
+
+    // Calculate flow rate (mL/min)
+    flowRate = (flowPulseCount * 1000.0) / (7.5 * 60.0);
+
+    // Output data to Serial Monitor
+    Serial.print("Flow Rate: ");
+    Serial.print(flowRate);
+    Serial.println(" mL/min");
+
+    Serial.print("Distance: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+
+    Serial.print("GSR Value: ");
+    Serial.println(gsrValue);
+
+    Serial.print("Red Freq: ");
+    Serial.print(redFreq);
+    Serial.print(" | Green: ");
+    Serial.print(greenFreq);
+    Serial.print(" | Blue: ");
+    Serial.println(blueFreq);
+
+    // Check for air leaks (tube disconnection)
+    if (distance > leakThreshold) {
+      digitalWrite(buzzerPin, HIGH); // Sound buzzer
+      analogWrite(bloodPumpEnablePin, 0); // Stop pumps
+      analogWrite(fluidPumpEnablePin, 0);
+
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("WARNING: AIR IN LINE");
+      lcd.setCursor(0, 1);
+      lcd.print("STOPPED PUMPS");
+      delay(2000);
+    }
+
+    // Update LCD with current readings
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Flow:");
+    lcd.print(flowRate);
+    lcd.print("mL");
+
+    lcd.setCursor(0, 1);
+    if (patientStressed) {
+      lcd.print("Patient uncomfortable");
+    } else {
+      lcd.print("GSR:");
+      lcd.print(gsrValue);
+    }
+
+    // Reset pulse counter and update time
+    flowPulseCount = 0;
+    oldTime = millis();
+    attachInterrupt(digitalPinToInterrupt(flowSensorPin), countPulse, RISING);
+  }
+}
+
+// ------------------------------
+// Interrupt Service Routine
+// Counts flow sensor pulses
+// ------------------------------
+void countPulse() {
+  flowPulseCount++;
+}
+
+// ------------------------------
+// Reads GSR sensor value
+// Converts it into conductance (mS)
+// ------------------------------
+float getGSR() {
+  int sensorValue = analogRead(gsrPin);
+  float resistance_voltage = sensorValue * (5.0 / 1023.0);
+  float conductance_voltage = 3.32 - resistance_voltage;
+  float conductanceMS = conductance_voltage * 1000;
+  return conductanceMS;
+}
+
+// ------------------------------
+// Reads color sensor frequencies
+// Determines blood leak if RED intensity is high
+// ------------------------------
+void readColor() {
+  // Read RED component
+  digitalWrite(S2, LOW);
+  digitalWrite(S3, LOW);
+  redFreq = pulseIn(colorOut, LOW);
+
+  // Read GREEN component
+  digitalWrite(S2, HIGH);
+  digitalWrite(S3, HIGH);
+  greenFreq = pulseIn(colorOut, LOW);
+
+  // Read BLUE component
+  digitalWrite(S2, LOW);
+  digitalWrite(S3, HIGH);
+  blueFreq = pulseIn(colorOut, LOW);
+
+  // Detect blood leak based on RED frequency
+  if (redFreq < 50 && redFreq > 30) {
+    bloodLeakDetected = true;
+  } else {
+    bloodLeakDetected = false;
+  }
+}
