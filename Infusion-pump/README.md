@@ -1,62 +1,115 @@
-# 🏥 Arduino Infusion Pump System
+# Infusion Pump Project
 
-![WhatsApp Image 2025-05-03 at 02 31 30_638dbe13](https://github.com/user-attachments/assets/e7aaa286-fd54-4fa8-8de5-dac42f916e83)
+## Overview
 
-
-## 📌 Overview
-An Arduino-based medical infusion pump that precisely controls liquid drug delivery with real-time monitoring and safety alarms.
+This project presents a prototype of an **Infusion Pump System** built using an Arduino Uno platform. The design focuses on the safe and precise control of fluid delivery rates, inspired by medical-grade infusion pumps used in hospitals. The system features real-time monitoring, user adjustability, and automatic alerts to ensure patient safety and operational reliability.
 
 ---
 
-## 🛠 Hardware Components
-| Component | Specification | Connection |
-|-----------|---------------|------------|
-| Arduino Uno | ATmega328P | - |
-| L298N Motor Driver | 2A, 12V | IN3(D3), IN4(D5), ENB(D6) |
-| YF-S201 Flow Sensor | 1-30L/min | D2 (Interrupt) |
-| 16x2 LCD | HD44780 | D7-D12 |
-| Peristaltic Pump | 12V DC | Connected to L298N |
-| Buzzer | 5V Active | D4 |
-| LED Indicator | Red 5mm | D13 |
+## Features
+
+* **Accurate Flow Control:** Real-time sensing and adjustment of flow rates.
+* **LCD Display:** Continuous monitoring of live flow rate and motor speed.
+* **User Interaction:** Two push buttons to dynamically increase or decrease the motor speed.
+* **Alarm System:** Buzzer and LED activation under abnormal flow conditions (overflow or no flow).
+* **Fail-Safe Mechanism:** Immediate motor halt or alarm when thresholds are violated.
 
 ---
 
-## 🔧 Key Code Features
+## Final Project Image
 
-### ⚙️ Motor Control
-```arduino
-analogWrite(ENB, motorSpeed);  // PWM speed control (0-255)
-digitalWrite(int3, HIGH);      // Set direction
-digitalWrite(int4, LOW);
+![WhatsApp Image 2025-05-03 at 02 31 30_f89ba3f8](https://github.com/user-attachments/assets/ece945ec-818e-4b3f-b234-e6c8dc07b9df)
 
-🌊 Flow Measurement
-// Interrupt handler
-void pulseCounter() { pulseCount++; } 
+---
 
-// Calculate flow rate (7.5 pulses/mL for YF-S201)
-flowRate = (pulses / 7.5) * 1000;  // mL/min
-🖥 LCD Display
-lcd.setCursor(0, 1);
-lcd.print(flowRate, 1);  // Show actual flow
-lcd.print(" mL/min S:");
-lcd.print(motorSpeed);   // Show set speed
-🚨 Alarm System
-Condition 	LED  	Buzzer	 LCD Display
-Normal    	OFF 	 OFF	   Flow Value
-No Flow	    ON	   OFF    	"NO FLOW"
-High Flow  	BLINK 	ON	    "WARNING!"
-📊 Technical Specifications
-Parameter	         Value	                  Notes
-Flow Range	    0-1000 mL/min        	Adjustable via code
-Control Resolution	±20 units	        Per button press
-Update Rate       	2 Hz	             500ms intervals
-Accuracy	          ±2%                After calibration
-🚀 Circuit Diagram
-![ChatGPT Image 3 مايو 2025، 03_44_19 ص](https://github.com/user-attachments/assets/c441ad45-b671-4b68-8f96-62cee8f6b6f3)
+## Demo Video
 
 
-🎥 Demonstration
+Uploading WhatsApp Video 2025-05-03 at 02.32.49_3389682f.mp4…
 
-https://github.com/user-attachments/assets/df086b73-b543-4cda-b8bb-df0331b2ee66
+---
 
 
+## Circuit Diagram
+
+
+![ChatGPT Image 3 مايو 2025، 03_44_19 ص](https://github.com/user-attachments/assets/d70b2737-b8f9-4bb3-984d-3b74b53c2bbf)
+
+---
+
+## Components Used
+
+* Arduino Uno R3
+* LCD 16x2 Display (with potentiometer for contrast control)
+* L298N Motor Driver
+* DC Motor
+* Flow Sensor (e.g., YF-S201)
+* Push Buttons (Increase/Decrease speed)
+* Buzzer
+* LED with a current-limiting resistor
+* Breadboard and jumper wires
+* Power Supply (USB or external 5V/12V for motor)
+
+---
+
+## System Architecture
+
+1. **Initialization:**
+
+   * LCD and motor control pins are initialized.
+   * Motor starts with a default speed.
+
+2. **Flow Measurement:**
+
+   * The flow sensor outputs pulses corresponding to the flow rate.
+   * An interrupt routine counts these pulses and updates the flow measurement.
+
+3. **User Control:**
+
+   * Button A0 increases motor speed.
+   * Button A1 decreases motor speed.
+
+4. **Alarm Conditions:**
+
+   * **High Flow (>1000 mL/min):** Buzzer and LED activate.
+   * **Zero Flow:** LED turns on to alert user.
+
+5. **Display Update:**
+
+   * LCD is updated every 500 ms with current flow rate and motor speed.
+
+---
+
+## How It Works
+
+* **Real-Time Monitoring:** Calculates flow rate based on pulse count and updates the LCD.
+* **Motor Speed Control:** PWM signal adjusts motor power based on user input.
+* **Safety Checks:** Immediate alarms on detecting abnormal flow behaviors.
+* **User-Friendly Interface:** Clear feedback on screen and through alarms.
+
+This design emulates critical aspects of commercial infusion pumps: precision, reliability, and responsive safety alerts.
+
+---
+
+## Potential Improvements
+
+* Implement closed-loop feedback to automatically adjust motor speed for maintaining a set flow rate.
+* Add battery backup for enhanced portability.
+* Integrate wireless monitoring via Bluetooth or Wi-Fi.
+* Expand alarm system to include visual LCD warnings and log error history.
+
+---
+
+## Team Members
+-Abdelrahman Emad Negm
+-Amat Alrahman Sayed
+-Alaa Essam
+-Farah Yehya
+-Muhammed Nasser
+
+
+## License
+
+This project is developed for educational purposes under the Introduction to Medical Equipment course (Spring 2025).
+
+---
