@@ -22,12 +22,7 @@ This project presents a prototype of an **Infusion Pump System** built using an 
 
 ---
 
-## Demo Video
 
-
-Uploading WhatsApp Video 2025-05-03 at 02.32.49_3389682f.mp4…
-
----
 
 
 ## Circuit Diagram
