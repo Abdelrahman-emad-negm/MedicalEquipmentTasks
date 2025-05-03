@@ -4,6 +4,7 @@
 
 # 🩸 Smart Hemodialysis Monitoring System
 
+
 A team-based biomedical engineering project that simulates and enhances the safety of the hemodialysis process using real-time sensor-based monitoring.
 
 ##  Project Overview
@@ -63,12 +64,11 @@ This project was developed collaboratively as part of our biomedical engineering
 We tackled real-life challenges with creative sensor integration and medical insight.
 
 ### 👥 Team Members
-
+- [Abdelrahman Emad Negm](https://www.linkedin.com/in/abdelrahman-emad-negm-30baab314)
+- [Muhammad Nasser](https://www.linkedin.com/in/muhammad-nasser-71a70932a)
 - [Amat Alrahman Sayed](https://www.linkedin.com/in/amat-alrahman-sayed-871712349)  
 - [Alaa Essam](https://www.linkedin.com/in/alaa-essam-76a692292)  
 - [Farah Yehya](https://www.linkedin.com/in/farah-yehya-bba680326)  
-- [Abdelrahman Emad Negm](https://www.linkedin.com/in/abdelrahman-emad-negm-30baab314)
-
 
 ---
 
