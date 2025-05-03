@@ -1,0 +1,96 @@
+// Infant Incubator Monitoring System
+// Sensors: Pulse Sensor (Heart Rate), DHT11 (Temperature & Humidity)
+// Actuators: Fan (PWM control), Buzzer, LCD Display
+
+#define USE_ARDUINO_INTERRUPTS false
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <PulseSensorPlayground.h>
+#include <DHT.h>
+
+// Pin Definitions
+#define fanEN 3
+#define buzzer 8
+#define relayPin 7
+#define DHTPIN 6
+
+// DHT11 Sensor setup
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+// LCD setup (16 columns x 2 rows)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Pulse Sensor setup
+const int PulseWire = A0;
+int Threshold = 550;
+PulseSensorPlayground pulseSensor;
+
+void setup() {
+    Serial.begin(9600);
+    
+    // Initialize sensors and actuators
+    dht.begin();
+    pinMode(relayPin, OUTPUT);
+    pinMode(fanEN, OUTPUT);
+    pinMode(buzzer, OUTPUT);
+    digitalWrite(relayPin, LOW);
+    digitalWrite(buzzer, LOW);
+
+    // Initialize LCD
+    lcd.begin(16, 2);
+    lcd.backlight();
+    lcd.clear();
+
+    // Initialize Pulse Sensor
+    pulseSensor.analogInput(PulseWire);
+    pulseSensor.setThreshold(Threshold);
+    if (pulseSensor.begin()) {
+        Serial.println("Pulse Sensor initialized successfully");
+    } else {
+        Serial.println("Pulse Sensor initialization failed");
+    }
+}
+
+void loop() {
+    int myBPM = pulseSensor.getBeatsPerMinute();
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+
+    if (myBPM > 0) {
+        lcd.print("BPM: ");
+        lcd.print(myBPM);
+    } else {
+        lcd.print("Waiting BPM...");
+    }
+
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+
+    lcd.setCursor(0, 1);
+    if (!isnan(temperature) && !isnan(humidity)) {
+        if (temperature < 35) {
+            // Normal condition
+            digitalWrite(relayPin, LOW);
+            analogWrite(fanEN, 0);
+            digitalWrite(buzzer, LOW);
+            lcd.print("T:");
+            lcd.print(temperature);
+            lcd.print("C H:");
+            lcd.print(humidity);
+            lcd.print("%");
+        } else {
+            // High temperature alert
+            digitalWrite(relayPin, HIGH);
+            analogWrite(fanEN, 200);
+            digitalWrite(buzzer, HIGH);
+            lcd.print("High Temp!!!");
+        }
+    } else {
+        Serial.println("Failed to read from DHT sensor!");
+    }
+
+    delay(1000);
+}
