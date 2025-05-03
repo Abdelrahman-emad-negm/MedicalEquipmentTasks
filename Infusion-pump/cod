@@ -1,0 +1,154 @@
+/*
+ * Infusion Pump Control System
+ * 
+ * Controls liquid drug delivery with:
+ * - Adjustable flow rate
+ * - Real-time flow monitoring
+ * - Alarm system
+ * 
+ * Pin Configuration:
+ * - Motor: 3,5,6 (L298N control)
+ * - Flow sensor: 2 (interrupt)
+ * - LCD: 7-12
+ * - Buttons: A0,A1
+ * - Alarm: 4 (buzzer), 13 (LED)
+ */
+
+#include <LiquidCrystal.h>
+
+// Initialize LCD with pin configuration
+LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
+
+// Motor control pins
+const int int3 = 3;       // L298N IN3
+const int int4 = 5;       // L298N IN4
+const int ENB = 6;        // L298N ENB (PWM speed control)
+
+// Alarm components
+const int buzzer = 4;     // Buzzer pin
+const int Led = 13;       // Visual alarm
+
+// User interface
+#define BTN_INCREASE A0   // Flow rate increase
+#define BTN_DECREASE A1   // Flow rate decrease
+#define FLOW_SENSOR_PIN 2 // Flow sensor interrupt pin
+
+// Flow calculation variables
+volatile int pulseCount = 0;    // Flow sensor pulses
+float flowRate = 0;             // Calculated flow rate (mL/min)
+unsigned long lastUpdate = 0;   // Last flow calculation time
+unsigned long lastButtonPress = 0; // Button debounce timer
+int motorSpeed = 60;            // Initial motor speed (0-255)
+
+// Flow sensor interrupt service routine
+void pulseCounter() {
+  pulseCount++;
+}
+
+void setup() {
+  // Initialize LCD
+  lcd.begin(16, 2);
+  lcd.print("Flow Rate:");
+  
+  // Configure motor pins
+  pinMode(int3, OUTPUT);
+  pinMode(int4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  
+  // Configure alarm pins
+  pinMode(buzzer, OUTPUT);
+  pinMode(Led, OUTPUT);
+  
+  // Configure buttons with internal pullup
+  pinMode(BTN_INCREASE, INPUT_PULLUP);
+  pinMode(BTN_DECREASE, INPUT_PULLUP);
+  
+  // Configure flow sensor interrupt
+  pinMode(FLOW_SENSOR_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), pulseCounter, RISING);
+  
+  // Start motor
+  analogWrite(ENB, motorSpeed);
+  digitalWrite(int3, HIGH);
+  digitalWrite(int4, LOW);
+}
+
+void loop() {
+  // Handle button presses with debounce
+  if (millis() - lastButtonPress > 200) {
+    if (digitalRead(BTN_INCREASE) == LOW) {
+      motorSpeed = min(motorSpeed + 20, 255);
+      lastButtonPress = millis();
+    }
+    if (digitalRead(BTN_DECREASE) == LOW) {
+      motorSpeed = max(motorSpeed - 20, 0);
+      lastButtonPress = millis();
+    }
+  }
+
+  // Motor control logic
+  if (motorSpeed > 0) {
+    digitalWrite(int3, HIGH);
+    digitalWrite(int4, LOW);
+  } else {
+    digitalWrite(int3, LOW);
+    digitalWrite(int4, LOW);
+  }
+  analogWrite(ENB, motorSpeed);
+
+  // Update flow rate every 500ms
+  if (millis() - lastUpdate >= 500) {
+    lastUpdate = millis();
+
+    // Safely read pulse count
+    noInterrupts();
+    int pulses = pulseCount;
+    pulseCount = 0;
+    interrupts();
+
+    // Calculate flow rate (7.5 pulses per mL for YF-S201)
+    flowRate = (pulses > 0) ? ((float)pulses / 7.5) * 1000 : 0;
+
+    // Alarm conditions
+    if (flowRate > 1000) {          // High flow alarm
+      digitalWrite(buzzer, HIGH);
+      digitalWrite(Led, HIGH);
+    } 
+    else if (flowRate == 0) {       // No flow alarm
+      digitalWrite(buzzer, LOW);
+      digitalWrite(Led, HIGH);
+    }
+    else {                          // Normal operation
+      digitalWrite(buzzer, LOW);
+      digitalWrite(Led, LOW);
+    }
+
+    // Update LCD display
+    updateDisplay();
+  }
+}
+
+void updateDisplay() {
+  lcd.setCursor(0, 1);
+  lcd.print("                ");  // Clear line
+  
+  // Display flow status
+  lcd.setCursor(0, 1);
+  if (flowRate == 0) {
+    lcd.print("NO FLOW");
+  } 
+  else if (flowRate > 1000) {
+    lcd.print("WARN! ");
+    lcd.print(flowRate, 1);
+    lcd.print("mL/min");
+  } 
+  else {
+    lcd.print(flowRate, 1);
+    lcd.print(" mL/min ");
+  }
+  
+  // Display motor speed
+  lcd.setCursor(10, 1);
+  lcd.print("S:");
+  lcd.print(motorSpeed);
+}
