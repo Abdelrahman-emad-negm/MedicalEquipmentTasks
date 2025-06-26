@@ -169,15 +169,6 @@ Use console logs for error tracing.
 
 ---
 
-## 👥 Team Members
-
-- **Muhammad Nasser**
-- **Abdelrahman Emad**
-- **Farah Yehia**
-- **Alaa Essam**
-- **Amat Elrahman**
-
----
 
 ## 🤝 Contributing
 
