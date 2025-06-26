@@ -19,7 +19,7 @@ Each project focuses on the design and implementation of essential medical devic
 - **Highlights:**  
   ✅ Real-time flow monitoring  
   ✅ Alarms for abnormal conditions  
-  ✅ User-controlled operation
+  ✅ User-controlled operation  
 - **🔗 [View Project](https://github.com/Abdelrahman-emad-negm/MedicalEquipmentTasks/tree/main/Infusion-pump)**
 
 ---
@@ -30,7 +30,7 @@ Each project focuses on the design and implementation of essential medical devic
 - **Highlights:**  
   ✅ Patient fatigue detection via GSR sensor  
   ✅ Adaptive flow rate adjustments  
-  ✅ Emphasis on patient safety
+  ✅ Emphasis on patient safety  
 - **🔗 [View Project](https://github.com/Abdelrahman-emad-negm/MedicalEquipmentTasks/tree/main/SmartHemodialysis)**
 
 ---
@@ -41,8 +41,19 @@ Each project focuses on the design and implementation of essential medical devic
 - **Highlights:**  
   ✅ Temperature and humidity control  
   ✅ Live environment monitoring  
-  ✅ Critical condition alarms
+  ✅ Critical condition alarms  
 - **🔗 [View Project](https://github.com/Abdelrahman-emad-negm/MedicalEquipmentTasks/tree/main/Infant-Incubator)**
+
+---
+
+### 4. AI-Powered Endoscopy Analysis Tool
+- **Description:**  
+  A software-based diagnostic tool using deep learning and YOLO to analyze endoscopic videos. The system detects abnormal frames and provides object detection overlays for clinical interpretation.
+- **Highlights:**  
+  ✅ TensorFlow-based abnormality classification  
+  ✅ YOLOv8 object detection  
+  ✅ Real-time GUI with batch and live analysis  
+- **🔗 [View Project](https://github.com/Abdelrahman-emad-negm/MedicalEquipmentTasks/tree/main/AI_POWERED_ENDOSCOPY)**  
 
 ---
 
@@ -56,9 +67,9 @@ Each project focuses on the design and implementation of essential medical devic
 ---
 
 ## 🏫 Course Details
-- **Course Name:** Introduction to Medical Equipment
-- **Semester:** Spring 2025
-- **Instructor:** Dr. Sherif El-Gohary
+- **Course Name:** Introduction to Medical Equipment  
+- **Semester:** Spring 2025  
+- **Instructor:** Dr. Sherif El-Gohary  
 - **Teaching Assistant:** Eng. Alaa Tarek
 
 ---
